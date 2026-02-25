@@ -1,71 +1,73 @@
-# Secure RAG Engine
+# secure-rag-actions-engine
 
-Production blueprint for a secure 2-stage RAG backend with deterministic action policy.
-
-## What is implemented
-- Stage 1 classification (`intent`, risk/compliance signals, context sufficiency)
-- Deterministic policy engine for action routing (`escalate > create_ticket > notify_admin > none` fallback by allowed actions)
-- Stage 2 strict grounded response with JSON schema enforcement
-- Validation retries and safe fallback response
-- Prompt-injection hardening and trust-boundary framing
-- Async action dispatch interface (+ in-memory/noop/celery adapters)
-- Observability fields in structured logs (trace, latency, retries, token usage)
-- Phase 2 interfaces scaffold (prompt versioning, A/B, semantic cache, cost router)
-
-## Install
-
+## English
+## Problem
+RAG systems in production need deterministic safety controls and action governance, not only free-form LLM responses.
+## Solution
+This project provides a secure 2-stage RAG orchestration blueprint with policy-driven action routing, validation, and safe fallback handling.
+## Tech Stack
+- Python
+- Pydantic
+- pytest
+- Structured policy/action orchestration
+## Architecture
+```text
+src/secure_rag_engine/
+tests/
+pyproject.toml
+```
+```mermaid
+flowchart TD
+  A[User request + context] --> B[Stage 1 classification]
+  B --> C[Policy engine]
+  C --> D[Action routing]
+  C --> E[Stage 2 grounded answer]
+  E --> F[Validation + safe fallback]
+```
+## Features
+- Two-stage RAG control flow
+- Deterministic action policy (`escalate/create_ticket/notify_admin/none`)
+- Injection hardening and trust boundaries
+- Validation retries and fallback response
+- Dispatcher interfaces for action backends
+## How to Run
 ```bash
 pip install -e .[dev]
-```
-
-## Run tests
-
-```bash
 pytest
 ```
 
-## Minimal usage
-
-```python
-from secure_rag_engine import EngineConfig, InMemoryActionDispatcher, SecureRagOrchestrator
-from secure_rag_engine.llm import LLMProvider, LLMResult
-from secure_rag_engine.models import AiRequest
-
-class DummyProvider(LLMProvider):
-    def generate_json(self, **kwargs):
-        if kwargs["stage"] == "stage1_classification":
-            return LLMResult(content={
-                "intent": "qa",
-                "is_complaint": False,
-                "has_legal_threat": False,
-                "has_urgent_risk": False,
-                "risk_score": 0.1,
-                "context_sufficiency": "sufficient",
-                "classification_confidence": "high",
-            })
-        return LLMResult(content={
-            "answer": "Example answer from context.",
-            "confidence": "high",
-            "action_required": False,
-            "action_type": "none",
-            "action_payload": {"priority": "low", "reason": "No action required."},
-        })
-
-orchestrator = SecureRagOrchestrator(
-    llm_provider=DummyProvider(),
-    action_dispatcher=InMemoryActionDispatcher(),
-    config=EngineConfig(),
-)
-
-response = orchestrator.process(
-    AiRequest(
-        tenant_id="t1",
-        conversation_id="c1",
-        user_id="u1",
-        user_question="What is our refund window?",
-        retrieved_chunks=[{"id": "1", "text": "Refunds are allowed within 30 days.", "score": 0.91}],
-        allowed_actions=["notify_admin", "create_ticket", "escalate"],
-    )
-)
-print(response.model_dump())
+## Русский
+## Проблема
+Продакшен RAG-системам нужны детерминированные механизмы безопасности и маршрутизации действий, а не только свободный ответ LLM.
+## Решение
+Проект предоставляет безопасный 2-stage RAG blueprint с policy-driven маршрутизацией действий, валидацией и fallback-логикой.
+## Стек
+- Python
+- Pydantic
+- pytest
+- Оркестрация policy/action
+## Архитектура
+```text
+src/secure_rag_engine/
+tests/
+pyproject.toml
+```
+```mermaid
+flowchart TD
+  A[Запрос + контекст] --> B[Stage 1 классификация]
+  B --> C[Policy engine]
+  C --> D[Маршрутизация действий]
+  C --> E[Stage 2 grounded answer]
+  E --> F[Валидация + safe fallback]
+```
+## Возможности
+- Двухэтапный RAG-пайплайн
+- Детерминированная policy маршрутизации действий
+- Защита от prompt injection
+- Повторы валидации и безопасный fallback
+- Интерфейсы dispatch для action backend
+## Как запустить
+```bash
+pip install -e .[dev]
+pytest
 ```
